@@ -9,14 +9,11 @@ import {
   ActivityIndicator,
 } from "react-native";
 import * as ImagePicker from "expo-image-picker";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 export interface PhotoItem {
-  /** Local file URI from ImagePicker — used to render a preview thumbnail. */
   localUri: string;
-  /** Remote URL after the photo has been uploaded to the API. */
   remoteUrl?: string;
-  /** Upload progress state (so the user sees retry needed vs in-flight). */
   state: "uploading" | "ready" | "failed";
 }
 
@@ -27,18 +24,14 @@ interface Props {
   onChange: (next: PhotoItem[]) => void;
 }
 
-/**
- * Multi-photo picker using `expo-image-picker`. Each picked image is converted
- * to a base64 data URI on-device and pushed through `onUpload` (which talks to
- * `/api/upload/photo`). Failed uploads can be retried by tapping the failed
- * thumbnail; the retry hits the same `onUpload` callback.
- */
 export function PhotoPicker({
   photos,
   maxPhotos = 5,
   onUpload,
   onChange,
 }: Props) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const [working, setWorking] = useState(false);
 
   async function pick(source: "camera" | "gallery") {
@@ -171,53 +164,55 @@ function guessMime(uri: string): string {
   return "image/jpeg";
 }
 
-const styles = StyleSheet.create({
-  thumbnails: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
-  thumb: {
-    width: 88,
-    height: 88,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    position: "relative",
-  },
-  thumbImg: { width: "100%", height: "100%" },
-  thumbOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  thumbOverlayError: { backgroundColor: "rgba(220,38,38,0.7)" },
-  thumbOverlayText: { color: "#fff", fontSize: 10, fontWeight: "600" },
-  removeBtn: {
-    position: "absolute",
-    top: 2,
-    right: 2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: "rgba(0,0,0,0.65)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  removeText: { color: "#fff", fontSize: 18, lineHeight: 18, fontWeight: "700" },
-  actions: { flexDirection: "row", gap: 10, marginTop: 12 },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-  },
-  actionEmoji: { fontSize: 18 },
-  actionLabel: { fontSize: 14, fontWeight: "600", color: colors.text },
-  hint: { fontSize: 11, color: colors.textMuted, marginTop: 6 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    thumbnails: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
+    thumb: {
+      width: 88,
+      height: 88,
+      borderRadius: 12,
+      overflow: "hidden",
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      position: "relative",
+    },
+    thumbImg: { width: "100%", height: "100%" },
+    thumbOverlay: {
+      ...StyleSheet.absoluteFill,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    thumbOverlayError: { backgroundColor: "rgba(220,38,38,0.7)" },
+    thumbOverlayText: { color: "#fff", fontSize: 10, fontWeight: "600" },
+    removeBtn: {
+      position: "absolute",
+      top: 2,
+      right: 2,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: "rgba(0,0,0,0.65)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    removeText: { color: "#fff", fontSize: 18, lineHeight: 18, fontWeight: "700" },
+    actions: { flexDirection: "row", gap: 10, marginTop: 12 },
+    actionBtn: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+    },
+    actionEmoji: { fontSize: 18 },
+    actionLabel: { fontSize: 14, fontWeight: "600", color: colors.text },
+    hint: { fontSize: 11, color: colors.textMuted, marginTop: 6 },
+  });
+}

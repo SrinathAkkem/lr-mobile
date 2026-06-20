@@ -15,8 +15,9 @@ import { router } from "expo-router";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import { Ionicons } from "@expo/vector-icons";
 import { api } from "@/lib/api";
-import { colors } from "@/constants/theme";
-import { PhotoPicker, PhotoItem } from "@/components/PhotoPicker";
+import { useAuth } from "@/lib/auth";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
+import { UploadPhotosModal, type PhotoItem } from "@/components/UploadPhotosModal";
 import { SignaturePad, SignaturePadHandle } from "@/components/SignaturePad";
 
 type FormState = {
@@ -40,11 +41,30 @@ type FormState = {
 
 const PAYMENT_MODES = ["To Pay", "Paid", "To Be Billed"] as const;
 
+function formatDisplayDate(iso: string): string {
+  const d = new Date(iso);
+  const today = new Date();
+  const isToday =
+    d.getDate() === today.getDate() &&
+    d.getMonth() === today.getMonth() &&
+    d.getFullYear() === today.getFullYear();
+  const formatted = d.toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+  });
+  return isToday ? `${formatted} (Today)` : formatted;
+}
+
 export default function CreateLRScreen() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+  const { user } = useAuth();
   const sigRef = useRef<SignaturePadHandle>(null);
   const [loading, setLoading] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [photos, setPhotos] = useState<PhotoItem[]>([]);
+  const [photosOpen, setPhotosOpen] = useState(false);
   const [signatureUrl, setSignatureUrl] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState | "photos" | "signature", string>>>({});
 
@@ -75,40 +95,24 @@ export default function CreateLRScreen() {
   function validate(): boolean {
     const next: typeof errors = {};
     const required: (keyof FormState)[] = [
-      "consignorName",
-      "consignorAddress",
-      "consigneeName",
-      "consigneeAddress",
-      "consigneePhone",
-      "originCity",
-      "destinationCity",
-      "vehicleNumber",
-      "goodsDescription",
-      "noOfPackages",
-      "weightKg",
-      "declaredValue",
-      "freightAmount",
-      "dispatchDate",
+      "consignorName", "consignorAddress", "consigneeName", "consigneeAddress",
+      "consigneePhone", "originCity", "destinationCity", "vehicleNumber",
+      "goodsDescription", "noOfPackages", "weightKg", "declaredValue",
+      "freightAmount", "dispatchDate",
     ];
     for (const k of required) {
-      const v = String(form[k] ?? "").trim();
-      if (!v) next[k] = "Required";
+      if (!String(form[k] ?? "").trim()) next[k] = "Required";
     }
-    if (form.consigneePhone && !/^\d{10}$/.test(form.consigneePhone)) {
+    if (form.consigneePhone && !/^\d{10}$/.test(form.consigneePhone))
       next.consigneePhone = "Must be 10 digits";
-    }
-    if (form.noOfPackages && !/^\d+$/.test(form.noOfPackages)) {
+    if (form.noOfPackages && !/^\d+$/.test(form.noOfPackages))
       next.noOfPackages = "Whole number only";
-    }
     for (const k of ["weightKg", "declaredValue", "freightAmount"] as const) {
-      if (form[k] && Number.isNaN(Number(form[k]))) {
-        next[k] = "Numbers only";
-      }
+      if (form[k] && Number.isNaN(Number(form[k]))) next[k] = "Numbers only";
     }
     if (!signatureUrl) next.signature = "Driver signature required";
-    if (photos.some((p) => p.state === "uploading")) {
+    if (photos.some((p) => p.state === "uploading"))
       next.photos = "Wait for uploads to finish";
-    }
     setErrors(next);
     return Object.keys(next).length === 0;
   }
@@ -151,9 +155,7 @@ export default function CreateLRScreen() {
       paymentMode: form.paymentMode,
       dispatchDate: form.dispatchDate,
       specialInstructions: form.specialInstructions.trim() || undefined,
-      photos: photos
-        .map((p) => p.remoteUrl)
-        .filter((u): u is string => !!u),
+      photos: photos.map((p) => p.remoteUrl).filter((u): u is string => !!u),
       signatureUrl,
     };
     const res = await api.createLR(payload);
@@ -169,444 +171,646 @@ export default function CreateLRScreen() {
   }
 
   return (
-    <ScrollView
-      style={styles.container}
-      contentContainerStyle={{ paddingBottom: 60 }}
-      keyboardShouldPersistTaps="handled"
-    >
-      {/* White header with back button */}
+    <View style={styles.outer}>
+      {/* ── Purple Header ──────────────────────────────── */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
-          <Ionicons name="arrow-back" size={22} color={colors.text} />
+          <Ionicons name="chevron-back" size={22} color="#fff" />
         </TouchableOpacity>
-        <View style={styles.headerCenter}>
-          <Text style={styles.title}>Create LR</Text>
-          <Text style={styles.subtitle}>Fill in shipment details</Text>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.headerTitle}>Create LR</Text>
+          <Text style={styles.headerSub}>Fill all details carefully</Text>
+        </View>
+        <View style={styles.sectionsBadge}>
+          <Text style={styles.sectionsBadgeText}>4 Sections</Text>
         </View>
       </View>
 
-      {/* Section 1: Consignor */}
-      <SectionHeader icon="person-outline">Consignor</SectionHeader>
-      <Field label="Consignor Name *" error={errors.consignorName}>
-        <TextInput
-          style={styles.input}
-          value={form.consignorName}
-          onChangeText={(v) => set("consignorName", v)}
-          placeholder="Full name"
-          placeholderTextColor={colors.textMuted}
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* ═══ SECTION 1: CONSIGNOR ═══════════════════════ */}
+        <SectionHead
+          num={1}
+          title="CONSIGNOR (SENDER)"
+          icon="person-outline"
+          colors={colors}
+          styles={styles}
         />
-      </Field>
-      <Field label="Consignor Address *" error={errors.consignorAddress}>
-        <TextInput
-          style={[styles.input, styles.inputMultiline]}
-          value={form.consignorAddress}
-          onChangeText={(v) => set("consignorAddress", v)}
-          multiline
-          placeholder="Full address"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
 
-      {/* Section 2: Consignee */}
-      <SectionHeader icon="people-outline">Consignee</SectionHeader>
-      <Field label="Consignee Name *" error={errors.consigneeName}>
-        <TextInput
-          style={styles.input}
-          value={form.consigneeName}
-          onChangeText={(v) => set("consigneeName", v)}
-          placeholder="Full name"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-      <Field label="Consignee Address *" error={errors.consigneeAddress}>
-        <TextInput
-          style={[styles.input, styles.inputMultiline]}
-          value={form.consigneeAddress}
-          onChangeText={(v) => set("consigneeAddress", v)}
-          multiline
-          placeholder="Full address"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-      <Field label="Consignee Phone *" error={errors.consigneePhone}>
-        <TextInput
-          style={styles.input}
-          value={form.consigneePhone}
-          onChangeText={(v) => set("consigneePhone", v.replace(/\D/g, "").slice(0, 10))}
-          keyboardType="phone-pad"
-          maxLength={10}
-          placeholder="10-digit mobile"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-
-      {/* Section 3: Shipment */}
-      <SectionHeader icon="cube-outline">Shipment</SectionHeader>
-      <Field label="Origin City *" error={errors.originCity}>
-        <TextInput
-          style={styles.input}
-          value={form.originCity}
-          onChangeText={(v) => set("originCity", v)}
-          placeholder="From city"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-      <Field label="Destination City *" error={errors.destinationCity}>
-        <TextInput
-          style={styles.input}
-          value={form.destinationCity}
-          onChangeText={(v) => set("destinationCity", v)}
-          placeholder="To city"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-      <Field label="Vehicle Number *" error={errors.vehicleNumber}>
-        <TextInput
-          style={styles.input}
-          value={form.vehicleNumber}
-          onChangeText={(v) => set("vehicleNumber", v.toUpperCase())}
-          autoCapitalize="characters"
-          placeholder="e.g. MH12AB1234"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-      <Field label="Goods Description *" error={errors.goodsDescription}>
-        <TextInput
-          style={[styles.input, styles.inputMultiline]}
-          value={form.goodsDescription}
-          onChangeText={(v) => set("goodsDescription", v)}
-          multiline
-          placeholder="Describe goods"
-          placeholderTextColor={colors.textMuted}
-        />
-      </Field>
-
-      <View style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <Field label="No. of Packages *" error={errors.noOfPackages}>
-            <NumericInput
-              value={form.noOfPackages}
-              onChangeText={(v) => set("noOfPackages", v)}
-              keyboardType="number-pad"
-              placeholder="0"
-            />
-          </Field>
-        </View>
-        <View style={{ width: 12 }} />
-        <View style={{ flex: 1 }}>
-          <Field label="Weight (KG) *" error={errors.weightKg}>
-            <NumericInput
-              value={form.weightKg}
-              onChangeText={(v) => set("weightKg", v)}
-              keyboardType="decimal-pad"
-              placeholder="0.0"
-            />
-          </Field>
-        </View>
-      </View>
-
-      <View style={styles.row}>
-        <View style={{ flex: 1 }}>
-          <Field label="Declared Value (₹) *" error={errors.declaredValue}>
-            <NumericInput
-              value={form.declaredValue}
-              onChangeText={(v) => set("declaredValue", v)}
-              keyboardType="decimal-pad"
-              placeholder="0"
-            />
-          </Field>
-        </View>
-        <View style={{ width: 12 }} />
-        <View style={{ flex: 1 }}>
-          <Field label="Freight Amount (₹) *" error={errors.freightAmount}>
-            <NumericInput
-              value={form.freightAmount}
-              onChangeText={(v) => set("freightAmount", v)}
-              keyboardType="decimal-pad"
-              placeholder="0"
-            />
-          </Field>
-        </View>
-      </View>
-
-      <Field label="Payment Mode *">
-        <View style={styles.chips}>
-          {PAYMENT_MODES.map((m) => (
-            <TouchableOpacity
-              key={m}
-              style={[styles.chip, form.paymentMode === m && styles.chipActive]}
-              onPress={() => set("paymentMode", m)}
-            >
-              <Text
-                style={[
-                  styles.chipText,
-                  form.paymentMode === m && { color: "#fff" },
-                ]}
-              >
-                {m}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </Field>
-
-      <Field label="Date of Dispatch *" error={errors.dispatchDate}>
-        <TouchableOpacity
-          style={styles.input}
-          onPress={() => setShowDatePicker(true)}
-        >
-          <Text style={styles.inputText}>{form.dispatchDate}</Text>
-        </TouchableOpacity>
-        {showDatePicker && (
-          <DateTimePicker
-            value={new Date(form.dispatchDate)}
-            mode="date"
-            display={Platform.OS === "ios" ? "inline" : "default"}
-            onChange={(_, date) => {
-              setShowDatePicker(Platform.OS === "ios");
-              if (date) set("dispatchDate", date.toISOString().split("T")[0]);
-            }}
+        <Label text="Consignor Name *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={styles.input}
+            value={form.consignorName}
+            onChangeText={(v) => set("consignorName", v)}
+            placeholder="Srinivas Textiles Pvt Ltd"
+            placeholderTextColor={colors.textMuted}
           />
-        )}
-      </Field>
+          {errors.consignorName ? <Text style={styles.error}>{errors.consignorName}</Text> : null}
+        </View>
 
-      <Field label="Special Instructions (optional)">
-        <TextInput
-          style={[styles.input, styles.inputMultiline]}
-          value={form.specialInstructions}
-          onChangeText={(v) => set("specialInstructions", v)}
-          multiline
-          placeholder="Fragile, keep dry, etc."
-          placeholderTextColor={colors.textMuted}
+        <Label text="Consignor Address *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={[styles.input, styles.inputMulti]}
+            value={form.consignorAddress}
+            onChangeText={(v) => set("consignorAddress", v)}
+            multiline
+            placeholder="Plot 14, Industrial Area, Secunderabad, Telangana 500015"
+            placeholderTextColor={colors.textMuted}
+          />
+          {errors.consignorAddress ? <Text style={styles.error}>{errors.consignorAddress}</Text> : null}
+        </View>
+
+        {/* ═══ SECTION 2: CONSIGNEE ═══════════════════════ */}
+        <SectionHead
+          num={2}
+          title="CONSIGNEE (RECEIVER)"
+          icon="people-outline"
+          colors={colors}
+          styles={styles}
         />
-      </Field>
 
-      {/* Section 4: Photos & Signature */}
-      <SectionHeader icon="camera-outline">Photos & Signature</SectionHeader>
-      <View style={{ paddingHorizontal: 16 }}>
-        <Text style={styles.label}>Goods Photos (optional · up to 5)</Text>
-        <PhotoPicker
+        <Label text="Consignee Name *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={styles.input}
+            value={form.consigneeName}
+            onChangeText={(v) => set("consigneeName", v)}
+            placeholder="Krishna Fabrics"
+            placeholderTextColor={colors.textMuted}
+          />
+          {errors.consigneeName ? <Text style={styles.error}>{errors.consigneeName}</Text> : null}
+        </View>
+
+        <Label text="Consignee Address *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={[styles.input, styles.inputMulti]}
+            value={form.consigneeAddress}
+            onChangeText={(v) => set("consigneeAddress", v)}
+            multiline
+            placeholder="Shop 8, MG Road, Vijayawada, Andhra Pradesh 520001"
+            placeholderTextColor={colors.textMuted}
+          />
+          {errors.consigneeAddress ? <Text style={styles.error}>{errors.consigneeAddress}</Text> : null}
+        </View>
+
+        <Label text="Consignee Phone *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={styles.input}
+            value={form.consigneePhone}
+            onChangeText={(v) => set("consigneePhone", v.replace(/\D/g, "").slice(0, 10))}
+            keyboardType="phone-pad"
+            maxLength={10}
+            placeholder="9876512340"
+            placeholderTextColor={colors.textMuted}
+          />
+          {errors.consigneePhone ? <Text style={styles.error}>{errors.consigneePhone}</Text> : null}
+        </View>
+
+        {/* ═══ SECTION 3: SHIPMENT DETAILS ════════════════ */}
+        <SectionHead
+          num={3}
+          title="SHIPMENT DETAILS"
+          icon="cube-outline"
+          colors={colors}
+          styles={styles}
+        />
+
+        {/* Origin / Destination side-by-side */}
+        <View style={styles.rowLabels}>
+          <Text style={[styles.labelText, { flex: 1 }]}>Origin City *</Text>
+          <View style={{ width: 12 }} />
+          <Text style={[styles.labelText, { flex: 1 }]}>Destination *</Text>
+        </View>
+        <View style={styles.rowFields}>
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={styles.input}
+              value={form.originCity}
+              onChangeText={(v) => set("originCity", v)}
+              placeholder="Hyderabad"
+              placeholderTextColor={colors.textMuted}
+            />
+            {errors.originCity ? <Text style={styles.error}>{errors.originCity}</Text> : null}
+          </View>
+          <View style={{ width: 12 }} />
+          <View style={{ flex: 1 }}>
+            <TextInput
+              style={styles.input}
+              value={form.destinationCity}
+              onChangeText={(v) => set("destinationCity", v)}
+              placeholder="Vijayawada"
+              placeholderTextColor={colors.textMuted}
+            />
+            {errors.destinationCity ? <Text style={styles.error}>{errors.destinationCity}</Text> : null}
+          </View>
+        </View>
+
+        <Label text="Vehicle Number *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={[styles.input, { fontWeight: "700", letterSpacing: 1 }]}
+            value={form.vehicleNumber}
+            onChangeText={(v) => set("vehicleNumber", v.toUpperCase())}
+            autoCapitalize="characters"
+            placeholder="AP39AB1234"
+            placeholderTextColor={colors.textMuted}
+          />
+          {errors.vehicleNumber ? <Text style={styles.error}>{errors.vehicleNumber}</Text> : null}
+        </View>
+
+        <Label text="Goods Description *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TextInput
+            style={[styles.input, styles.inputMulti]}
+            value={form.goodsDescription}
+            onChangeText={(v) => set("goodsDescription", v)}
+            multiline
+            placeholder="Cotton fabric rolls — 200 bales, packed in gunny bags. Handle with care."
+            placeholderTextColor={colors.textMuted}
+          />
+          {errors.goodsDescription ? <Text style={styles.error}>{errors.goodsDescription}</Text> : null}
+        </View>
+
+        {/* No. of Packages / Weight side-by-side */}
+        <View style={styles.rowLabels}>
+          <Text style={[styles.labelText, { flex: 1 }]}>No. of Packages *</Text>
+          <View style={{ width: 12 }} />
+          <Text style={[styles.labelText, { flex: 1 }]}>Weight (KG) *</Text>
+        </View>
+        <View style={styles.rowFields}>
+          <View style={{ flex: 1 }}>
+            <TextInput style={styles.input} value={form.noOfPackages} onChangeText={(v) => set("noOfPackages", v)} keyboardType="number-pad" placeholder="200" placeholderTextColor={colors.textMuted} />
+            {errors.noOfPackages ? <Text style={styles.error}>{errors.noOfPackages}</Text> : null}
+          </View>
+          <View style={{ width: 12 }} />
+          <View style={{ flex: 1 }}>
+            <TextInput style={styles.input} value={form.weightKg} onChangeText={(v) => set("weightKg", v)} keyboardType="decimal-pad" placeholder="1850.5" placeholderTextColor={colors.textMuted} />
+            {errors.weightKg ? <Text style={styles.error}>{errors.weightKg}</Text> : null}
+          </View>
+        </View>
+
+        {/* Declared Value / Freight side-by-side */}
+        <View style={styles.rowLabels}>
+          <Text style={[styles.labelText, { flex: 1 }]}>Declared Value (₹) *</Text>
+          <View style={{ width: 12 }} />
+          <Text style={[styles.labelText, { flex: 1 }]}>Freight Amount (₹) *</Text>
+        </View>
+        <View style={styles.rowFields}>
+          <View style={{ flex: 1 }}>
+            <TextInput style={styles.input} value={form.declaredValue} onChangeText={(v) => set("declaredValue", v)} keyboardType="decimal-pad" placeholder="4,20,000" placeholderTextColor={colors.textMuted} />
+            {errors.declaredValue ? <Text style={styles.error}>{errors.declaredValue}</Text> : null}
+          </View>
+          <View style={{ width: 12 }} />
+          <View style={{ flex: 1 }}>
+            <TextInput style={styles.input} value={form.freightAmount} onChangeText={(v) => set("freightAmount", v)} keyboardType="decimal-pad" placeholder="18,500" placeholderTextColor={colors.textMuted} />
+            {errors.freightAmount ? <Text style={styles.error}>{errors.freightAmount}</Text> : null}
+          </View>
+        </View>
+
+        {/* Payment Mode */}
+        <Label text="Payment Mode *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <View style={styles.chips}>
+            {PAYMENT_MODES.map((m) => (
+              <TouchableOpacity
+                key={m}
+                style={[styles.chip, form.paymentMode === m && styles.chipActive]}
+                onPress={() => set("paymentMode", m)}
+              >
+                <Text style={[styles.chipText, form.paymentMode === m && styles.chipTextActive]}>
+                  {m}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+
+        {/* Date of Dispatch */}
+        <Label text="Date of Dispatch *" styles={styles} />
+        <View style={styles.fieldPad}>
+          <TouchableOpacity
+            style={styles.dateInput}
+            onPress={() => setShowDatePicker(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dateText}>{formatDisplayDate(form.dispatchDate)}</Text>
+            <Ionicons name="calendar-outline" size={18} color={colors.primaryLight} />
+          </TouchableOpacity>
+          {showDatePicker && (
+            <DateTimePicker
+              value={new Date(form.dispatchDate)}
+              mode="date"
+              display={Platform.OS === "ios" ? "inline" : "default"}
+              onChange={(_, date) => {
+                setShowDatePicker(Platform.OS === "ios");
+                if (date) set("dispatchDate", date.toISOString().split("T")[0]);
+              }}
+            />
+          )}
+          {errors.dispatchDate ? <Text style={styles.error}>{errors.dispatchDate}</Text> : null}
+        </View>
+
+        {/* Special Instructions */}
+        <View style={styles.fieldPad}>
+          <View style={styles.optionalRow}>
+            <Text style={styles.labelText}>Special Instructions</Text>
+            <Text style={styles.optionalTag}>Optional</Text>
+          </View>
+          <TextInput
+            style={[styles.input, styles.inputMulti, { marginTop: 6 }]}
+            value={form.specialInstructions}
+            onChangeText={(v) => set("specialInstructions", v)}
+            multiline
+            placeholder="Add any special handling notes (optional)..."
+            placeholderTextColor={colors.textMuted}
+          />
+        </View>
+
+        {/* ═══ SECTION 4: PHOTOS & SIGNATURE ══════════════ */}
+        <SectionHead
+          num={4}
+          title="PHOTOS & SIGNATURE"
+          icon="camera-outline"
+          colors={colors}
+          styles={styles}
+        />
+
+        <View style={styles.fieldPad}>
+          <View style={styles.optionalRow}>
+            <Text style={styles.labelBold}>Goods Photos</Text>
+            <Text style={styles.optionalTag}>Optional · Max 5</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.photoTrigger}
+            onPress={() => setPhotosOpen(true)}
+            activeOpacity={0.7}
+          >
+            <View style={styles.photoTriggerLeft}>
+              <Ionicons
+                name={photos.length > 0 ? "checkmark-circle" : "camera-outline"}
+                size={20}
+                color={photos.length > 0 ? colors.success : colors.primaryLight}
+              />
+              <Text style={[styles.photoTriggerText, photos.length > 0 && { color: colors.success }]}>
+                {photos.length > 0
+                  ? `${photos.length} photo${photos.length > 1 ? "s" : ""} added`
+                  : "Tap to add photos"}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+          </TouchableOpacity>
+          {errors.photos && <Text style={styles.error}>{errors.photos}</Text>}
+        </View>
+
+        <UploadPhotosModal
+          visible={photosOpen}
           photos={photos}
           maxPhotos={5}
           onUpload={uploadPhoto}
           onChange={setPhotos}
+          onDone={() => {
+            setPhotosOpen(false);
+            sigRef.current?.open();
+          }}
+          onSkip={() => setPhotosOpen(false)}
         />
-        {errors.photos && <Text style={styles.error}>{errors.photos}</Text>}
-      </View>
 
-      <View style={{ paddingHorizontal: 16, marginTop: 20 }}>
-        <Text style={styles.label}>Driver Signature *</Text>
-        <View style={styles.signatureBox}>
-          {signatureUrl ? (
-            <View style={styles.signatureStatus}>
-              <Ionicons name="checkmark-circle" size={18} color={colors.success} />
-              <Text style={styles.signatureSaved}>Signature captured</Text>
-            </View>
-          ) : (
-            <Text style={styles.signatureEmpty}>Not signed yet</Text>
-          )}
+        <View style={styles.fieldPad}>
+          <Text style={styles.labelBold}>Driver Signature *</Text>
+          <View style={styles.signatureBox}>
+            {signatureUrl ? (
+              <View style={styles.sigDoneRow}>
+                <View style={styles.sigDoneLeft}>
+                  <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+                  <View>
+                    <Text style={styles.sigDoneTitle}>Signature Added</Text>
+                    <Text style={styles.sigDoneHint}>Tap to view or change</Text>
+                  </View>
+                </View>
+                <TouchableOpacity onPress={() => sigRef.current?.open()}>
+                  <Text style={styles.sigChangeLink}>Change</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={styles.sigEmptyRow}>
+                <Text style={styles.sigEmptyText}>Not signed yet</Text>
+                <TouchableOpacity
+                  style={styles.sigBtn}
+                  onPress={() => sigRef.current?.open()}
+                >
+                  <Ionicons name="create-outline" size={14} color="#fff" />
+                  <Text style={styles.sigBtnText}>Sign now</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+          {errors.signature && <Text style={styles.error}>{errors.signature}</Text>}
+        </View>
+
+        {/* ── Submit Button ────────────────────────────── */}
+        <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
           <TouchableOpacity
-            style={styles.signatureBtn}
-            onPress={() => sigRef.current?.open()}
+            style={[styles.submitBtn, loading && { opacity: 0.6 }]}
+            onPress={submit}
+            disabled={loading}
+            activeOpacity={0.85}
           >
-            <Ionicons name="create-outline" size={14} color="#fff" />
-            <Text style={styles.signatureBtnText}>
-              {signatureUrl ? "Re-sign" : "Sign now"}
+            {loading ? (
+              <ActivityIndicator size="small" color="#fff" />
+            ) : (
+              <Ionicons name="checkmark-circle" size={20} color="#fff" />
+            )}
+            <Text style={styles.submitText}>
+              {loading ? "Submitting..." : "Submit LR"}
             </Text>
           </TouchableOpacity>
         </View>
-        {errors.signature && (
-          <Text style={styles.error}>{errors.signature}</Text>
-        )}
-      </View>
+      </ScrollView>
 
-      <TouchableOpacity
-        style={[styles.submit, loading && { opacity: 0.6 }]}
-        onPress={submit}
-        disabled={loading}
-        activeOpacity={0.85}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <Ionicons name="checkmark-circle" size={20} color="#fff" />
-        )}
-        <Text style={styles.submitText}>
-          {loading ? "Submitting..." : "Submit LR"}
-        </Text>
-      </TouchableOpacity>
-
-      <SignaturePad ref={sigRef} onCapture={captureSignature} />
-    </ScrollView>
-  );
-}
-
-function SectionHeader({ children, icon }: { children: string; icon: keyof typeof import("@expo/vector-icons").Ionicons.glyphMap }) {
-  return (
-    <View style={styles.sectionHeader}>
-      <View style={styles.sectionIconWrap}>
-        <Ionicons name={icon} size={14} color={colors.primaryLight} />
-      </View>
-      <Text style={styles.sectionText}>{children}</Text>
+      <SignaturePad
+        ref={sigRef}
+        driverName={user?.name ?? "Driver"}
+        onCapture={captureSignature}
+        onSubmitLR={submit}
+      />
     </View>
   );
 }
 
-function Field({
-  label,
-  error,
-  children,
+/* ─── Section Header Sub-component ──────────────────────── */
+function SectionHead({
+  num,
+  title,
+  icon,
+  colors,
+  styles,
 }: {
-  label: string;
-  error?: string;
-  children: React.ReactNode;
+  num: number;
+  title: string;
+  icon: keyof typeof Ionicons.glyphMap;
+  colors: ThemeColors;
+  styles: ReturnType<typeof createStyles>;
 }) {
   return (
-    <View style={styles.fieldWrap}>
-      <Text style={styles.label}>{label}</Text>
-      {children}
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+    <View style={styles.sectionHead}>
+      <View style={styles.sectionIcon}>
+        <Ionicons name={icon} size={13} color={colors.primaryLight} />
+      </View>
+      <Text style={styles.sectionText}>
+        SECTION {num}: {title}
+      </Text>
     </View>
   );
 }
 
-function NumericInput({
-  value,
-  onChangeText,
-  keyboardType,
-  placeholder,
-}: {
-  value: string;
-  onChangeText: (v: string) => void;
-  keyboardType: KeyboardTypeOptions;
-  placeholder?: string;
-}) {
+/* ─── Label Sub-component ───────────────────────────────── */
+function Label({ text, styles }: { text: string; styles: ReturnType<typeof createStyles> }) {
   return (
-    <TextInput
-      style={styles.input}
-      value={value}
-      onChangeText={onChangeText}
-      keyboardType={keyboardType}
-      placeholder={placeholder}
-      placeholderTextColor={colors.textMuted}
-    />
+    <View style={styles.fieldPad}>
+      <Text style={styles.labelText}>{text}</Text>
+    </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    backgroundColor: colors.white,
-    paddingTop: 56,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    borderBottomWidth: 1,
-    borderBottomColor: "#F1F5F9",
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  headerCenter: { marginLeft: 12 },
-  title: { fontSize: 18, fontWeight: "700", color: colors.text },
-  subtitle: { color: colors.textMuted, fontSize: 12, marginTop: 1 },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingHorizontal: 16,
-    paddingTop: 24,
-    paddingBottom: 6,
-  },
-  sectionIconWrap: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: "#F5F3FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  sectionText: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.primaryLight,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  fieldWrap: { paddingHorizontal: 16, marginTop: 12 },
-  row: { flexDirection: "row", paddingHorizontal: 16, marginTop: 0 },
-  label: { fontSize: 12, color: colors.textMuted, marginBottom: 6 },
-  input: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    padding: 14,
-    fontSize: 14,
-    color: colors.text,
-  },
-  inputMultiline: { height: 88, textAlignVertical: "top" },
-  inputText: { fontSize: 14, color: colors.text },
-  chips: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-  },
-  chipActive: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primaryLight,
-  },
-  chipText: { fontSize: 13, fontWeight: "600", color: colors.text },
-  signatureBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-  },
-  signatureStatus: { flexDirection: "row", alignItems: "center", gap: 6 },
-  signatureEmpty: { fontSize: 14, color: colors.textMuted },
-  signatureSaved: { fontSize: 14, color: colors.success, fontWeight: "600" },
-  signatureBtn: {
-    backgroundColor: colors.primary,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-  },
-  signatureBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
-  error: { color: colors.error, fontSize: 12, marginTop: 4 },
-  submit: {
-    margin: 16,
-    backgroundColor: colors.primary,
-    borderRadius: 14,
-    paddingVertical: 16,
-    alignItems: "center",
-    marginTop: 28,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  submitText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-});
+/* ─── Styles ────────────────────────────────────────────── */
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    outer: { flex: 1, backgroundColor: colors.background },
+
+    /* Header */
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 54,
+      paddingBottom: 18,
+      paddingHorizontal: 16,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    headerTitle: { color: "#fff", fontSize: 18, fontWeight: "700" },
+    headerSub: { color: "#C4B5FD", fontSize: 12, marginTop: 2 },
+    sectionsBadge: {
+      backgroundColor: "rgba(255,255,255,0.18)",
+      paddingHorizontal: 12,
+      paddingVertical: 5,
+      borderRadius: 14,
+    },
+    sectionsBadgeText: { color: "#fff", fontSize: 11, fontWeight: "700" },
+
+    /* Scroll */
+    scroll: { flex: 1 },
+
+    /* Section Head */
+    sectionHead: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      paddingHorizontal: 16,
+      paddingTop: 24,
+      paddingBottom: 4,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      marginTop: 8,
+    },
+    sectionIcon: {
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.iconBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    sectionText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primaryLight,
+      letterSpacing: 0.5,
+    },
+
+    /* Fields */
+    fieldPad: { paddingHorizontal: 16, marginTop: 10 },
+    labelText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textMuted,
+      marginBottom: 0,
+    },
+    labelBold: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    optionalRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    optionalTag: {
+      fontSize: 11,
+      color: colors.textMuted,
+      fontStyle: "italic",
+    },
+    input: {
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      fontSize: 14,
+      color: colors.text,
+      marginTop: 6,
+    },
+    inputMulti: {
+      height: 76,
+      textAlignVertical: "top",
+      paddingTop: 12,
+    },
+
+    /* Row layouts */
+    rowLabels: {
+      flexDirection: "row",
+      paddingHorizontal: 16,
+      marginTop: 10,
+    },
+    rowFields: {
+      flexDirection: "row",
+      paddingHorizontal: 16,
+    },
+
+    /* Chips / Payment Mode */
+    chips: { flexDirection: "row", gap: 8, flexWrap: "wrap", marginTop: 6 },
+    chip: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.primaryLight,
+      backgroundColor: "transparent",
+    },
+    chipActive: {
+      backgroundColor: colors.primaryLight,
+      borderColor: colors.primaryLight,
+    },
+    chipText: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.primaryLight,
+    },
+    chipTextActive: { color: "#fff" },
+
+    /* Date */
+    dateInput: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.card,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      paddingVertical: 13,
+      marginTop: 6,
+    },
+    dateText: { fontSize: 14, color: colors.text, fontWeight: "500" },
+
+    /* Signature */
+    signatureBox: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      marginTop: 8,
+    },
+    sigDoneRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    sigDoneLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
+    sigDoneTitle: { fontSize: 14, fontWeight: "700", color: colors.success },
+    sigDoneHint: { fontSize: 11, color: colors.textMuted, marginTop: 1 },
+    sigChangeLink: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.primaryLight,
+    },
+    sigEmptyRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+    },
+    sigEmptyText: { fontSize: 14, color: colors.textMuted },
+    sigBtn: {
+      backgroundColor: colors.primary,
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    sigBtnText: { color: "#fff", fontWeight: "700", fontSize: 13 },
+
+    /* Photo trigger */
+    photoTrigger: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      marginTop: 8,
+    },
+    photoTriggerLeft: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+    },
+    photoTriggerText: {
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.primaryLight,
+    },
+
+    /* Errors */
+    error: { color: colors.error, fontSize: 11, marginTop: 4 },
+
+    /* Submit */
+    submitBtn: {
+      backgroundColor: "#059669",
+      borderRadius: 16,
+      paddingVertical: 18,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+      shadowColor: "#059669",
+      shadowOpacity: 0.3,
+      shadowRadius: 12,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 4,
+    },
+    submitText: { color: "#fff", fontSize: 17, fontWeight: "700" },
+  });
+}

@@ -1,6 +1,5 @@
 import { View, Text, StyleSheet } from "react-native";
 import type { LRStatus } from "@/lib/types";
-import { colors } from "@/constants/theme";
 
 const config: Record<LRStatus, { label: string; bg: string; fg: string; dot: string }> = {
   pending: { label: "PENDING", bg: "#FEF3C7", fg: "#B45309", dot: "#F59E0B" },

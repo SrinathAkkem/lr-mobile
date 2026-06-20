@@ -85,6 +85,12 @@ export const api = {
       body: JSON.stringify(body),
     }),
 
+  updateLR: (id: string, body: Record<string, unknown>) =>
+    request<import("./types").LRRequest>(`/api/lr/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
   // ─── LR actions ────────────────────────────────────────────────────────
   approveLR: (id: string) =>
     request(`/api/lr/${id}/approve`, { method: "PUT" }),
@@ -176,6 +182,12 @@ export const api = {
   ) =>
     request<import("./types").Company>("/api/company/profile", {
       method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateProfile: (body: { name?: string }) =>
+    request<import("./types").User>("/api/auth/profile", {
+      method: "PUT",
       body: JSON.stringify(body),
     }),
 

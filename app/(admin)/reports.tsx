@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/auth";
 import { api, API_URL, getToken } from "@/lib/api";
 import type { DashboardStats, LRRequest } from "@/lib/types";
 import { formatINR } from "@/components/StatusBadge";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 const ZERO: DashboardStats = {
   totalLrs: 0,
@@ -30,6 +30,9 @@ const ZERO: DashboardStats = {
 };
 
 export default function AdminReports() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+
   const { user } = useAuth();
   const [stats, setStats] = useState<DashboardStats>(ZERO);
   const [topRoutes, setTopRoutes] = useState<
@@ -202,149 +205,151 @@ function formatCompact(amount: number): string {
   return String(amount);
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: { color: colors.textMuted, fontSize: 14 },
-  header: {
-    backgroundColor: colors.primary,
-    paddingTop: 56,
-    paddingBottom: 18,
-    paddingHorizontal: 20,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  title: { color: "#fff", fontSize: 22, fontWeight: "700" },
-  subtitle: { color: "#C4B5FD", fontSize: 12, marginTop: 4 },
-  calendarBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  kpiCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  kpiLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textMuted,
-    letterSpacing: 0.6,
-  },
-  kpiValue: {
-    fontSize: 36,
-    fontWeight: "700",
-    color: colors.text,
-    marginTop: 4,
-  },
-  kpiMeta: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
-  barChart: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
-    marginTop: 20,
-    paddingHorizontal: 8,
-  },
-  barCol: {
-    alignItems: "center",
-    flex: 1,
-    gap: 6,
-  },
-  bar: {
-    width: "70%",
-    borderRadius: 6,
-  },
-  barLabel: {
-    fontSize: 11,
-    color: colors.textMuted,
-    fontWeight: "600",
-  },
-  routesCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 16,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  routesTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.textMuted,
-    letterSpacing: 0.6,
-    marginBottom: 14,
-  },
-  routesEmpty: { color: colors.textMuted, fontSize: 13 },
-  routeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F8FAFC",
-    gap: 12,
-  },
-  routeIndex: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: colors.textMuted,
-    width: 28,
-  },
-  routeName: {
-    flex: 1,
-    fontSize: 14,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  routeBadge: {
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-  },
-  routeBadgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primaryLight,
-  },
-  exportBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 16,
-    paddingVertical: 16,
-    borderRadius: 28,
-    borderWidth: 1.5,
-    borderColor: colors.primaryLight,
-    backgroundColor: colors.white,
-  },
-  exportText: {
-    color: colors.primaryLight,
-    fontWeight: "700",
-    fontSize: 15,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+    },
+    loadingText: { color: colors.textMuted, fontSize: 14 },
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 56,
+      paddingBottom: 18,
+      paddingHorizontal: 20,
+    },
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    title: { color: "#fff", fontSize: 22, fontWeight: "700" },
+    subtitle: { color: colors.headerSubtitle, fontSize: 12, marginTop: 4 },
+    calendarBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    kpiCard: {
+      backgroundColor: colors.card,
+      marginHorizontal: 16,
+      marginTop: 12,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    kpiLabel: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textMuted,
+      letterSpacing: 0.6,
+    },
+    kpiValue: {
+      fontSize: 36,
+      fontWeight: "700",
+      color: colors.text,
+      marginTop: 4,
+    },
+    kpiMeta: {
+      fontSize: 12,
+      color: colors.textMuted,
+      marginTop: 2,
+    },
+    barChart: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      marginTop: 20,
+      paddingHorizontal: 8,
+    },
+    barCol: {
+      alignItems: "center",
+      flex: 1,
+      gap: 6,
+    },
+    bar: {
+      width: "70%",
+      borderRadius: 6,
+    },
+    barLabel: {
+      fontSize: 11,
+      color: colors.textMuted,
+      fontWeight: "600",
+    },
+    routesCard: {
+      backgroundColor: colors.card,
+      marginHorizontal: 16,
+      marginTop: 12,
+      borderRadius: 16,
+      padding: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    routesTitle: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.textMuted,
+      letterSpacing: 0.6,
+      marginBottom: 14,
+    },
+    routesEmpty: { color: colors.textMuted, fontSize: 13 },
+    routeRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingVertical: 12,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+      gap: 12,
+    },
+    routeIndex: {
+      fontSize: 13,
+      fontWeight: "700",
+      color: colors.textMuted,
+      width: 28,
+    },
+    routeName: {
+      flex: 1,
+      fontSize: 14,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    routeBadge: {
+      borderWidth: 1,
+      borderColor: colors.primaryLight,
+      borderRadius: 10,
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+    },
+    routeBadgeText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primaryLight,
+    },
+    exportBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginHorizontal: 16,
+      marginTop: 16,
+      paddingVertical: 16,
+      borderRadius: 28,
+      borderWidth: 1.5,
+      borderColor: colors.primaryLight,
+      backgroundColor: colors.card,
+    },
+    exportText: {
+      color: colors.primaryLight,
+      fontWeight: "700",
+      fontSize: 15,
+    },
+  });
+}

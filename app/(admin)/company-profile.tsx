@@ -16,9 +16,11 @@ import * as ImagePicker from "expo-image-picker";
 import { useAuth } from "@/lib/auth";
 import { api, API_URL, getToken } from "@/lib/api";
 import type { Company } from "@/lib/types";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 export default function CompanyProfileScreen() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { user, logout } = useAuth();
   const [company, setCompany] = useState<Company | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,6 @@ export default function CompanyProfileScreen() {
       style={styles.container}
       contentContainerStyle={{ paddingBottom: 40 }}
     >
-      {/* Purple Header with Avatar */}
       <View style={styles.header}>
         <View style={styles.avatarWrap}>
           <View style={styles.avatar}>
@@ -150,12 +151,11 @@ export default function CompanyProfileScreen() {
           RONOHUB · {company?.lrCode ?? "COMP-0000"}
         </Text>
         <View style={styles.infoBadge}>
-          <Ionicons name="information-circle-outline" size={14} color={colors.primaryLight} />
+          <Ionicons name="shield-outline" size={14} color={colors.shieldColor} />
           <Text style={styles.infoBadgeText}>Details go on every LR PDF</Text>
         </View>
       </View>
 
-      {/* Form Fields */}
       <View style={styles.formSection}>
         <Text style={styles.label}>COMPANY NAME</Text>
         <TextInput
@@ -181,7 +181,6 @@ export default function CompanyProfileScreen() {
         />
       </View>
 
-      {/* Company Logo */}
       <View style={styles.uploadSection}>
         <Text style={styles.label}>COMPANY LOGO</Text>
         <TouchableOpacity
@@ -202,7 +201,6 @@ export default function CompanyProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Company Stamp */}
       <View style={styles.uploadSection}>
         <Text style={styles.label}>COMPANY STAMP IMAGE</Text>
         <TouchableOpacity
@@ -223,7 +221,6 @@ export default function CompanyProfileScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Admin Account */}
       <View style={styles.adminSection}>
         <Text style={styles.adminLabel}>ADMIN ACCOUNT</Text>
         <View style={styles.adminCard}>
@@ -233,7 +230,6 @@ export default function CompanyProfileScreen() {
         </View>
       </View>
 
-      {/* Save Button */}
       <TouchableOpacity
         style={[styles.saveBtn, saving && { opacity: 0.6 }]}
         onPress={save}
@@ -245,7 +241,6 @@ export default function CompanyProfileScreen() {
         </Text>
       </TouchableOpacity>
 
-      {/* Logout */}
       <TouchableOpacity style={styles.logoutBtn} onPress={confirmLogout}>
         <Ionicons name="log-out-outline" size={18} color={colors.error} />
         <Text style={styles.logoutText}>Logout</Text>
@@ -259,154 +254,156 @@ function absUrl(u: string) {
   return `${API_URL}${u}`;
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-  },
-  header: {
-    backgroundColor: colors.primary,
-    paddingTop: 56,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-    alignItems: "center",
-  },
-  avatarWrap: { position: "relative", marginBottom: 12 },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: { color: "#fff", fontSize: 32, fontWeight: "700" },
-  gearBadge: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  companyTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
-  platformCode: { color: "#C4B5FD", fontSize: 12, marginTop: 4, letterSpacing: 0.5 },
-  infoBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.15)",
-  },
-  infoBadgeText: { color: "#DDD6FE", fontSize: 12, fontWeight: "500" },
-  formSection: {
-    marginHorizontal: 16,
-    marginTop: 16,
-  },
-  label: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.textMuted,
-    letterSpacing: 0.6,
-    marginTop: 16,
-    marginBottom: 6,
-  },
-  input: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-    padding: 14,
-    fontSize: 15,
-    color: colors.text,
-  },
-  inputMultiline: { height: 80, textAlignVertical: "top" },
-  uploadSection: {
-    marginHorizontal: 16,
-    marginTop: 8,
-  },
-  uploadArea: {
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: "dashed",
-    padding: 24,
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 120,
-  },
-  uploadIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
-    backgroundColor: "#F3F0FF",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 10,
-  },
-  uploadHint: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
-  uploadMeta: { fontSize: 11, color: "#94A3B8", marginTop: 4 },
-  uploadImg: { width: 100, height: 100, borderRadius: 12 },
-  adminSection: {
-    marginHorizontal: 16,
-    marginTop: 20,
-  },
-  adminLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.primaryLight,
-    letterSpacing: 0.6,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  adminCard: {
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  adminName: { fontSize: 16, fontWeight: "700", color: colors.text },
-  adminMobile: { fontSize: 13, color: colors.primaryLight, marginTop: 4 },
-  adminCompany: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  saveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 20,
-    paddingVertical: 16,
-    borderRadius: 28,
-    backgroundColor: colors.primaryLight,
-  },
-  saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginHorizontal: 16,
-    marginTop: 12,
-    paddingVertical: 16,
-    borderRadius: 28,
-    backgroundColor: "#FFF",
-    borderWidth: 1.5,
-    borderColor: "#FECACA",
-  },
-  logoutText: { color: colors.error, fontWeight: "700", fontSize: 15 },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 56,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
+      alignItems: "center",
+    },
+    avatarWrap: { position: "relative", marginBottom: 12 },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarText: { color: "#fff", fontSize: 32, fontWeight: "700" },
+    gearBadge: {
+      position: "absolute",
+      bottom: -2,
+      right: -2,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.primaryLight,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: colors.primary,
+    },
+    companyTitle: { color: "#fff", fontSize: 20, fontWeight: "700" },
+    platformCode: { color: colors.headerSubtitle, fontSize: 12, marginTop: 4, letterSpacing: 0.5 },
+    infoBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 20,
+      backgroundColor: "rgb(254 243 224)",
+      borderWidth: 1,
+      borderColor: "rgb(254 243 224)",
+    },
+    infoBadgeText: { color: "#f5a623", fontSize: 12, fontWeight: "500" },
+    formSection: {
+      marginHorizontal: 16,
+      marginTop: 16,
+    },
+    label: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.textMuted,
+      letterSpacing: 0.6,
+      marginTop: 16,
+      marginBottom: 6,
+    },
+    input: {
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      padding: 14,
+      fontSize: 15,
+      color: colors.text,
+    },
+    inputMultiline: { height: 80, textAlignVertical: "top" },
+    uploadSection: {
+      marginHorizontal: 16,
+      marginTop: 8,
+    },
+    uploadArea: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderStyle: "dashed",
+      padding: 24,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 120,
+    },
+    uploadIconWrap: {
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      backgroundColor: colors.iconBg,
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 10,
+    },
+    uploadHint: { fontSize: 13, color: colors.textMuted, fontWeight: "500" },
+    uploadMeta: { fontSize: 11, color: colors.textMuted, marginTop: 4 },
+    uploadImg: { width: 100, height: 100, borderRadius: 12 },
+    adminSection: {
+      marginHorizontal: 16,
+      marginTop: 20,
+    },
+    adminLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.primaryLight,
+      letterSpacing: 0.6,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
+    adminCard: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    adminName: { fontSize: 16, fontWeight: "700", color: colors.text },
+    adminMobile: { fontSize: 13, color: colors.primaryLight, marginTop: 4 },
+    adminCompany: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    saveBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginHorizontal: 16,
+      marginTop: 20,
+      paddingVertical: 16,
+      borderRadius: 28,
+      backgroundColor: colors.primaryLight,
+    },
+    saveBtnText: { color: "#fff", fontWeight: "700", fontSize: 16 },
+    logoutBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginHorizontal: 16,
+      marginTop: 12,
+      paddingVertical: 16,
+      borderRadius: 28,
+      backgroundColor: colors.card,
+      borderWidth: 1.5,
+      borderColor: "#FECACA",
+    },
+    logoutText: { color: colors.error, fontWeight: "700", fontSize: 15 },
+  });
+}

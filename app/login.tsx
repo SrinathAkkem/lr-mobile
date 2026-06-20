@@ -15,11 +15,13 @@ import {
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 import { OtpBoxes } from "@/components/OtpBoxes";
 
 export default function LoginScreen() {
   const { sendOtp, login } = useAuth();
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const [mobile, setMobile] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState("");
@@ -90,7 +92,7 @@ export default function LoginScreen() {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: "#fff" }}
+      style={{ flex: 1, backgroundColor: colors.background }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
@@ -105,7 +107,7 @@ export default function LoginScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>Company Admin</Text>
+          <Text style={styles.title}>Welcome</Text>
           <Text style={styles.subtitle}>
             Sign in to manage your fleet & LRs
           </Text>
@@ -196,139 +198,139 @@ export default function LoginScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  scroll: { flexGrow: 1 },
-  header: {
-    backgroundColor: colors.primary,
-    paddingTop: 72,
-    paddingBottom: 44,
-    paddingHorizontal: 24,
-    alignItems: "center",
-  },
-  logo: {
-    width: 120,
-    height: 32,
-    tintColor: "#fff",
-  },
-  title: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "800",
-    marginTop: 20,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    color: "#C4B5FD",
-    marginTop: 8,
-    fontSize: 14,
-  },
-  formCard: {
-    marginTop: -16,
-    marginHorizontal: 16,
-    backgroundColor: "#fff",
-    borderRadius: 20,
-    padding: 24,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: 6,
-  },
-  label: {
-    fontSize: 12,
-    fontWeight: "600",
-    color: colors.textMuted,
-    marginBottom: 8,
-  },
-  phoneRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
-  prefixChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 14,
-    backgroundColor: "#F8FAFC",
-  },
-  prefixText: {
-    color: colors.text,
-    fontWeight: "600",
-    fontSize: 14,
-  },
-  input: {
-    flex: 1,
-    borderWidth: 1.5,
-    borderColor: "#E2E8F0",
-    borderRadius: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    fontSize: 16,
-    fontWeight: "500",
-    color: colors.text,
-  },
-  sendBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 16,
-    backgroundColor: colors.primaryLight,
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  sendBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  btnDisabled: { opacity: 0.45 },
-  divider: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginVertical: 20,
-    gap: 10,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: "#E2E8F0",
-  },
-  dividerText: {
-    fontSize: 11,
-    color: colors.textMuted,
-  },
-  verifyBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-    marginTop: 20,
-    backgroundColor: colors.primaryLight,
-    borderRadius: 12,
-    paddingVertical: 14,
-  },
-  verifyBtnText: {
-    color: "#fff",
-    fontWeight: "700",
-    fontSize: 15,
-  },
-  resendRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    marginTop: 16,
-  },
-  resendText: { fontSize: 13, color: colors.textMuted },
-  resendTimer: { fontSize: 13, color: colors.primaryLight, fontWeight: "700" },
-  resendLink: {
-    fontSize: 13,
-    color: colors.primaryLight,
-    fontWeight: "700",
-    textDecorationLine: "underline",
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    scroll: { flexGrow: 1 },
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 72,
+      paddingBottom: 44,
+      paddingHorizontal: 24,
+      alignItems: "center",
+    },
+    logo: {
+      width: 120,
+      height: 32,
+    },
+    title: {
+      color: "#fff",
+      fontSize: 28,
+      fontWeight: "800",
+      marginTop: 20,
+      letterSpacing: -0.5,
+    },
+    subtitle: {
+      color: "#C4B5FD",
+      marginTop: 8,
+      fontSize: 14,
+    },
+    formCard: {
+      marginTop: -16,
+      marginHorizontal: 16,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      padding: 24,
+      shadowColor: "#000",
+      shadowOpacity: 0.08,
+      shadowRadius: 20,
+      shadowOffset: { width: 0, height: 4 },
+      elevation: 6,
+    },
+    label: {
+      fontSize: 12,
+      fontWeight: "600",
+      color: colors.textMuted,
+      marginBottom: 8,
+    },
+    phoneRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    prefixChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 14,
+      backgroundColor: colors.inputBg,
+    },
+    prefixText: {
+      color: colors.text,
+      fontWeight: "600",
+      fontSize: 14,
+    },
+    input: {
+      flex: 1,
+      borderWidth: 1.5,
+      borderColor: colors.border,
+      borderRadius: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 14,
+      fontSize: 16,
+      fontWeight: "500",
+      color: colors.text,
+    },
+    sendBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 16,
+      backgroundColor: colors.primaryLight,
+      borderRadius: 12,
+      paddingVertical: 14,
+    },
+    sendBtnText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    btnDisabled: { opacity: 0.45 },
+    divider: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginVertical: 20,
+      gap: 10,
+    },
+    dividerLine: {
+      flex: 1,
+      height: 1,
+      backgroundColor: colors.border,
+    },
+    dividerText: {
+      fontSize: 11,
+      color: colors.textMuted,
+    },
+    verifyBtn: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+      marginTop: 20,
+      backgroundColor: colors.primaryLight,
+      borderRadius: 12,
+      paddingVertical: 14,
+    },
+    verifyBtnText: {
+      color: "#fff",
+      fontWeight: "700",
+      fontSize: 15,
+    },
+    resendRow: {
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      marginTop: 16,
+    },
+    resendText: { fontSize: 13, color: colors.textMuted },
+    resendTimer: { fontSize: 13, color: colors.primaryLight, fontWeight: "700" },
+    resendLink: {
+      fontSize: 13,
+      color: colors.primaryLight,
+      fontWeight: "700",
+      textDecorationLine: "underline",
+    },
+  });

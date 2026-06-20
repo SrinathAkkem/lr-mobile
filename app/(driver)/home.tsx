@@ -6,7 +6,6 @@ import {
   FlatList,
   StyleSheet,
   RefreshControl,
-  Image,
   ActivityIndicator,
 } from "react-native";
 import { router, useFocusEffect } from "expo-router";
@@ -15,16 +14,33 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import type { LRRequest } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 function greetingFor(date: Date): string {
   const h = date.getHours();
-  if (h < 12) return "Good morning";
-  if (h < 17) return "Good afternoon";
-  return "Good evening";
+  if (h < 12) return "Good Morning";
+  if (h < 17) return "Good Afternoon";
+  return "Good Evening";
+}
+
+function actionForStatus(status: string): { label: string; color: string } {
+  switch (status) {
+    case "pending":
+      return { label: "View Details", color: "#6366F1" };
+    case "approved":
+      return { label: "Download PDF", color: "#059669" };
+    case "rejected":
+      return { label: "Edit & Resubmit", color: "#DC2626" };
+    case "delivered":
+      return { label: "View Details", color: "#2563EB" };
+    default:
+      return { label: "View Details", color: "#6366F1" };
+  }
 }
 
 export default function DriverHome() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const { user } = useAuth();
   const [lrs, setLrs] = useState<LRRequest[]>([]);
   const [unread, setUnread] = useState(0);
@@ -54,6 +70,10 @@ export default function DriverHome() {
   const pending = lrs.filter((l) => l.status === "pending").length;
   const approved = lrs.filter((l) => l.status === "approved").length;
 
+  const branchName = user?.branch
+    ? `${user.company?.name ?? ""} · ${user.branch.name}`
+    : user?.company?.name ?? "";
+
   if (initialLoading) {
     return (
       <View style={styles.loadingContainer}>
@@ -62,15 +82,35 @@ export default function DriverHome() {
     );
   }
 
+  function iconColorForStatus(status: string): string {
+    switch (status) {
+      case "pending": return "#F59E0B";
+      case "approved": return "#059669";
+      case "rejected": return "#DC2626";
+      case "delivered": return "#2563EB";
+      default: return colors.primaryLight;
+    }
+  }
+
+  function iconBgForStatus(status: string): string {
+    switch (status) {
+      case "pending": return "#FEF3C7";
+      case "approved": return "#D1FAE5";
+      case "rejected": return "#FEE2E2";
+      case "delivered": return "#DBEAFE";
+      default: return colors.iconBg;
+    }
+  }
+
   return (
     <View style={styles.container}>
+      {/* Purple Header */}
       <View style={styles.header}>
         <View style={styles.headerTop}>
-          <Image
-            source={require("@/assets/images/ronohub-logo.png")}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greetingText}>{greetingFor(new Date())}</Text>
+            <Text style={styles.nameText}>{user?.name ?? "Driver"}</Text>
+          </View>
           <TouchableOpacity
             style={styles.bell}
             onPress={() => router.push("/notifications")}
@@ -84,204 +124,340 @@ export default function DriverHome() {
           </TouchableOpacity>
         </View>
 
-        <View style={styles.greetingRow}>
-          <Text style={styles.greeting}>{greetingFor(new Date())},</Text>
-          <Text style={styles.name}>{user?.name ?? "Driver"}</Text>
-          {user?.company?.name && (
-            <Text style={styles.company}>{user.company.name}</Text>
-          )}
-        </View>
-
-        <View style={styles.statRow}>
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{pending}</Text>
-            <Text style={styles.statLabel}>Pending</Text>
+        {branchName ? (
+          <View style={styles.branchChip}>
+            <Ionicons name="location" size={12} color="#C4B5FD" />
+            <Text style={styles.branchText}>{branchName}</Text>
           </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{approved}</Text>
-            <Text style={styles.statLabel}>Approved</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statBox}>
-            <Text style={styles.statValue}>{lrs.length}</Text>
-            <Text style={styles.statLabel}>Recent</Text>
-          </View>
-        </View>
+        ) : null}
       </View>
 
-      <View style={styles.body}>
-        <TouchableOpacity
-          style={styles.createBtn}
-          onPress={() => router.push("/(driver)/create")}
-          activeOpacity={0.85}
-        >
-          <Ionicons name="add-circle" size={22} color="#fff" />
-          <Text style={styles.createBtnText}>Create New LR</Text>
-        </TouchableOpacity>
+      <FlatList
+        data={lrs}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={{ paddingBottom: 20 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={load} />
+        }
+        ListHeaderComponent={
+          <>
+            {/* Create New LR Button */}
+            <TouchableOpacity
+              style={styles.createBtn}
+              onPress={() => router.push("/(driver)/create")}
+              activeOpacity={0.85}
+            >
+              <View style={styles.createBtnInner}>
+                <View style={styles.createIconCircle}>
+                  <Ionicons name="add" size={20} color="#fff" />
+                </View>
+                <Text style={styles.createBtnText}>Create New LR</Text>
+              </View>
+            </TouchableOpacity>
 
-        <Text style={styles.sectionTitle}>Recent LRs</Text>
-        <FlatList
-          data={lrs}
-          keyExtractor={(item) => item.id}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={load} />
-          }
-          renderItem={({ item }) => (
+            {/* Stats Row */}
+            <View style={styles.statsRow}>
+              <View style={styles.statCard}>
+                <Text style={[styles.statValue, { color: "#059669" }]}>
+                  {lrs.length}
+                </Text>
+                <Text style={styles.statLabel}>THIS MONTH</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={[styles.statValue, { color: "#D97706" }]}>
+                  {pending}
+                </Text>
+                <Text style={styles.statLabel}>PENDING</Text>
+              </View>
+              <View style={styles.statCard}>
+                <Text style={[styles.statValue, { color: "#059669" }]}>
+                  {approved}
+                </Text>
+                <Text style={styles.statLabel}>APPROVED</Text>
+              </View>
+            </View>
+
+            {/* Recent LRs Header */}
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>Recent LRs</Text>
+              <TouchableOpacity onPress={() => router.push("/(driver)/lrs")}>
+                <Text style={styles.seeAll}>See All</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        }
+        renderItem={({ item }) => {
+          const action = actionForStatus(item.status);
+          return (
             <TouchableOpacity
               style={styles.card}
               onPress={() => router.push(`/(driver)/lr/${item.id}`)}
               activeOpacity={0.7}
             >
-              <View style={styles.cardRow}>
-                <Text style={styles.lrId}>{item.trackingId}</Text>
+              <View style={styles.cardTop}>
+                <View style={[styles.cardIcon, { backgroundColor: iconBgForStatus(item.status) }]}>
+                  <Ionicons name="document-text" size={16} color={iconColorForStatus(item.status)} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.lrId}>
+                    {item.lrNumber ?? item.trackingId}
+                  </Text>
+                  <Text style={styles.route}>
+                    {item.originCity} → {item.destinationCity}
+                  </Text>
+                </View>
                 <StatusBadge status={item.status} />
               </View>
-              <Text style={styles.route}>
-                {item.originCity} → {item.destinationCity}
-              </Text>
               <View style={styles.cardBottom}>
-                <Text style={styles.consignee}>
-                  {item.consigneeName}
+                <View style={styles.dateRow}>
+                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+                  <Text style={styles.dateText}>
+                    {new Date(item.dispatchDate).toLocaleDateString("en-IN", {
+                      day: "2-digit",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </Text>
+                </View>
+                <Text style={[styles.actionText, { color: action.color }]}>
+                  {action.label}
                 </Text>
-                <Text style={styles.cardDate}>{item.dispatchDate}</Text>
               </View>
             </TouchableOpacity>
-          )}
-          ListEmptyComponent={
-            <View style={styles.empty}>
-              <Ionicons name="document-text-outline" size={42} color={colors.textMuted} />
-              <Text style={styles.emptyTitle}>No LRs yet</Text>
-              <Text style={styles.emptyHint}>
-                Tap "Create New LR" to record your first delivery.
-              </Text>
-            </View>
-          }
-        />
-      </View>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <Ionicons name="document-text-outline" size={42} color={colors.textMuted} />
+            <Text style={styles.emptyTitle}>No LRs yet</Text>
+            <Text style={styles.emptyHint}>
+              Tap "Create New LR" to record your first delivery.
+            </Text>
+          </View>
+        }
+      />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  loadingContainer: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-  },
-  header: {
-    backgroundColor: colors.primary,
-    paddingTop: 56,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-  },
-  headerTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logo: {
-    width: 110,
-    height: 28,
-  },
-  bell: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  notifBadge: {
-    position: "absolute",
-    top: 4,
-    right: 4,
-    backgroundColor: "#F472B6",
-    borderRadius: 9,
-    paddingHorizontal: 5,
-    minWidth: 18,
-    height: 18,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
-  greetingRow: { marginTop: 18 },
-  greeting: { color: "#fff", fontSize: 16 },
-  name: { color: "#fff", fontWeight: "700", fontSize: 22, marginTop: 2 },
-  company: { color: "#C4B5FD", fontSize: 13, marginTop: 4 },
-  statRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginTop: 18,
-    backgroundColor: "rgba(255,255,255,0.1)",
-    borderRadius: 14,
-    padding: 14,
-  },
-  statBox: { flex: 1, alignItems: "center" },
-  statDivider: {
-    width: 1,
-    height: 28,
-    backgroundColor: "rgba(255,255,255,0.15)",
-  },
-  statValue: { color: "#fff", fontSize: 22, fontWeight: "700" },
-  statLabel: { color: "#C4B5FD", fontSize: 11, marginTop: 2 },
-  body: { flex: 1, padding: 16 },
-  createBtn: {
-    backgroundColor: colors.primaryLight,
-    borderRadius: 14,
-    paddingVertical: 16,
-    paddingHorizontal: 18,
-    alignItems: "center",
-    marginBottom: 22,
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    shadowColor: colors.primary,
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 4,
-  },
-  createBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: colors.textMuted,
-    marginBottom: 10,
-    textTransform: "uppercase",
-    letterSpacing: 0.6,
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: "#F1F5F9",
-  },
-  cardRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  lrId: { fontWeight: "700", fontSize: 14, color: colors.text },
-  route: { color: colors.text, marginTop: 8, fontSize: 13, fontWeight: "600" },
-  cardBottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 6,
-  },
-  consignee: { color: colors.textMuted, fontSize: 12 },
-  cardDate: { color: colors.textMuted, fontSize: 11 },
-  empty: { padding: 30, alignItems: "center", gap: 8 },
-  emptyTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
-  emptyHint: {
-    color: colors.textMuted,
-    marginTop: 4,
-    fontSize: 13,
-    textAlign: "center",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    loadingContainer: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
+
+    /* ── Header ────────────────────────────────────────── */
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 56,
+      paddingBottom: 28,
+      paddingHorizontal: 20,
+    },
+    headerTop: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    greetingText: {
+      color: "#C4B5FD",
+      fontSize: 14,
+    },
+    nameText: {
+      color: "#fff",
+      fontWeight: "800",
+      fontSize: 24,
+      marginTop: 2,
+    },
+    bell: {
+      width: 42,
+      height: 42,
+      borderRadius: 21,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    notifBadge: {
+      position: "absolute",
+      top: 2,
+      right: 2,
+      backgroundColor: "#F472B6",
+      borderRadius: 9,
+      paddingHorizontal: 5,
+      minWidth: 18,
+      height: 18,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    badgeText: { color: "#fff", fontSize: 10, fontWeight: "700" },
+    branchChip: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 12,
+      alignSelf: "flex-start",
+      backgroundColor: "rgba(255,255,255,0.12)",
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+    },
+    branchText: {
+      color: "#DDD6FE",
+      fontSize: 12,
+      fontWeight: "500",
+    },
+
+    /* ── Create Button ─────────────────────────────────── */
+    createBtn: {
+      marginHorizontal: 16,
+      marginTop: 16,
+      borderRadius: 16,
+      overflow: "hidden",
+      backgroundColor: "#4F46E5",
+      shadowColor: "#4338CA",
+      shadowOpacity: 0.35,
+      shadowRadius: 14,
+      shadowOffset: { width: 0, height: 6 },
+      elevation: 6,
+    },
+    createBtnInner: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 10,
+      paddingVertical: 18,
+      paddingHorizontal: 20,
+      backgroundColor: "#4F46E5",
+      borderRadius: 16,
+    },
+    createIconCircle: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: "rgba(255,255,255,0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    createBtnText: {
+      color: "#fff",
+      fontSize: 17,
+      fontWeight: "700",
+    },
+
+    /* ── Stats Row ─────────────────────────────────────── */
+    statsRow: {
+      flexDirection: "row",
+      gap: 10,
+      paddingHorizontal: 16,
+      marginTop: 18,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      paddingVertical: 14,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statValue: {
+      fontSize: 24,
+      fontWeight: "800",
+    },
+    statLabel: {
+      fontSize: 9,
+      fontWeight: "700",
+      color: colors.textMuted,
+      marginTop: 4,
+      letterSpacing: 0.5,
+    },
+
+    /* ── Section Header ────────────────────────────────── */
+    sectionRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      paddingHorizontal: 16,
+      marginTop: 22,
+      marginBottom: 10,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    seeAll: {
+      fontSize: 13,
+      color: "#2563EB",
+      fontWeight: "600",
+    },
+
+    /* ── LR Card ───────────────────────────────────────── */
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 14,
+      marginHorizontal: 16,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardTop: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+    },
+    cardIcon: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    lrId: {
+      fontWeight: "700",
+      fontSize: 15,
+      color: colors.text,
+    },
+    route: {
+      color: colors.textMuted,
+      fontSize: 13,
+      marginTop: 2,
+    },
+    cardBottom: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 12,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    dateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+    },
+    dateText: {
+      color: colors.textMuted,
+      fontSize: 12,
+    },
+    actionText: {
+      fontSize: 13,
+      fontWeight: "600",
+    },
+
+    /* ── Empty State ───────────────────────────────────── */
+    empty: { padding: 30, alignItems: "center", gap: 8 },
+    emptyTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
+    emptyHint: {
+      color: colors.textMuted,
+      marginTop: 4,
+      fontSize: 13,
+      textAlign: "center",
+    },
+  });
+}

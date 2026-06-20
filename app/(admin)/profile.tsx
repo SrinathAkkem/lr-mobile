@@ -2,9 +2,12 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useAuth } from "@/lib/auth";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 export default function AdminProfile() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+
   const { user, logout } = useAuth();
 
   function confirmLogout() {
@@ -27,6 +30,31 @@ export default function AdminProfile() {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+
+  function Row({
+    icon,
+    label,
+    hint,
+    onPress,
+  }: {
+    icon: keyof typeof Ionicons.glyphMap;
+    label: string;
+    hint?: string;
+    onPress: () => void;
+  }) {
+    return (
+      <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+        <View style={styles.rowIcon}>
+          <Ionicons name={icon} size={18} color={colors.primaryLight} />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.rowLabel}>{label}</Text>
+          {hint && <Text style={styles.rowHint}>{hint}</Text>}
+        </View>
+        <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
+      </TouchableOpacity>
+    );
+  }
 
   return (
     <View style={styles.container}>
@@ -97,153 +125,130 @@ export default function AdminProfile() {
   );
 }
 
-function Row({
-  icon,
-  label,
-  hint,
-  onPress,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  label: string;
-  hint?: string;
-  onPress: () => void;
-}) {
-  return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.rowIcon}>
-        <Ionicons name={icon} size={18} color={colors.primaryLight} />
-      </View>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.rowLabel}>{label}</Text>
-        {hint && <Text style={styles.rowHint}>{hint}</Text>}
-      </View>
-      <Ionicons name="chevron-forward" size={18} color={colors.textMuted} />
-    </TouchableOpacity>
-  );
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 56,
+      paddingBottom: 24,
+      paddingHorizontal: 24,
+      alignItems: "center",
+    },
+    avatarWrap: {
+      position: "relative",
+      marginBottom: 12,
+    },
+    avatar: {
+      width: 80,
+      height: 80,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.2)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    avatarText: { color: "#fff", fontSize: 32, fontWeight: "700" },
+    gearBadge: {
+      position: "absolute",
+      bottom: -2,
+      right: -2,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
+      backgroundColor: colors.primaryLight,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 2,
+      borderColor: colors.primary,
+    },
+    companyName: {
+      color: "#fff",
+      fontSize: 20,
+      fontWeight: "700",
+    },
+    platformCode: {
+      color: colors.headerSubtitle,
+      fontSize: 12,
+      marginTop: 4,
+      letterSpacing: 0.5,
+    },
+    infoBadge: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 12,
+      paddingHorizontal: 14,
+      paddingVertical: 6,
+      borderRadius: 20,
+      backgroundColor: "rgb(254 243 224)",
+      borderWidth: 1,
+      borderColor: "rgb(254 243 224)",
+    },
+    infoBadgeText: {
+      color: "#f5a623",
+      fontSize: 12,
+      fontWeight: "500",
+    },
+    list: {
+      margin: 16,
+      backgroundColor: colors.card,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: "hidden",
+    },
+    row: {
+      flexDirection: "row",
+      alignItems: "center",
+      padding: 14,
+      gap: 14,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    rowIcon: {
+      width: 38,
+      height: 38,
+      borderRadius: 12,
+      backgroundColor: colors.iconBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    rowLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
+    rowHint: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    adminSection: {
+      marginHorizontal: 16,
+      marginTop: 4,
+    },
+    adminLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: colors.primaryLight,
+      letterSpacing: 0.6,
+      marginBottom: 8,
+      marginLeft: 4,
+    },
+    adminCard: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    adminName: { fontSize: 16, fontWeight: "700", color: colors.text },
+    adminMobile: { fontSize: 13, color: colors.primaryLight, marginTop: 4 },
+    adminCompany: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+    logout: {
+      margin: 16,
+      paddingVertical: 16,
+      borderRadius: 28,
+      backgroundColor: colors.card,
+      alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+      borderWidth: 1.5,
+      borderColor: "#FECACA",
+    },
+    logoutText: { color: colors.error, fontWeight: "700", fontSize: 15 },
+  });
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    backgroundColor: colors.primary,
-    paddingTop: 56,
-    paddingBottom: 24,
-    paddingHorizontal: 24,
-    alignItems: "center",
-  },
-  avatarWrap: {
-    position: "relative",
-    marginBottom: 12,
-  },
-  avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  avatarText: { color: "#fff", fontSize: 32, fontWeight: "700" },
-  gearBadge: {
-    position: "absolute",
-    bottom: -2,
-    right: -2,
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.primaryLight,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 2,
-    borderColor: colors.primary,
-  },
-  companyName: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  platformCode: {
-    color: "#C4B5FD",
-    fontSize: 12,
-    marginTop: 4,
-    letterSpacing: 0.5,
-  },
-  infoBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    marginTop: 12,
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 20,
-    backgroundColor: "rgb(254 243 224)",
-    borderWidth: 1,
-    borderColor: "rgb(254 243 224)",
-  },
-  infoBadgeText: {
-    color: "#f5a623",
-    fontSize: 12,
-    fontWeight: "500",
-  },
-  list: {
-    margin: 16,
-    backgroundColor: colors.white,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    overflow: "hidden",
-  },
-  row: {
-    flexDirection: "row",
-    alignItems: "center",
-    padding: 14,
-    gap: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  rowIcon: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: "#F5F3FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  rowLabel: { fontSize: 15, fontWeight: "600", color: colors.text },
-  rowHint: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  adminSection: {
-    marginHorizontal: 16,
-    marginTop: 4,
-  },
-  adminLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: colors.primaryLight,
-    letterSpacing: 0.6,
-    marginBottom: 8,
-    marginLeft: 4,
-  },
-  adminCard: {
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  adminName: { fontSize: 16, fontWeight: "700", color: colors.text },
-  adminMobile: { fontSize: 13, color: colors.primaryLight, marginTop: 4 },
-  adminCompany: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
-  logout: {
-    margin: 16,
-    paddingVertical: 16,
-    borderRadius: 28,
-    backgroundColor: "#FFF",
-    alignItems: "center",
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 8,
-    borderWidth: 1.5,
-    borderColor: "#FECACA",
-  },
-  logoutText: { color: colors.error, fontWeight: "700", fontSize: 15 },
-});

@@ -11,6 +11,7 @@ interface AuthContextValue {
   login: (mobile: string, otp: string) => Promise<{ ok: boolean; error?: string }>;
   sendOtp: (mobile: string) => Promise<{ ok: boolean; error?: string }>;
   logout: () => Promise<void>;
+  refreshUser: (patch: Partial<User>) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -55,8 +56,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }
 
+  async function refreshUser(patch: Partial<User>) {
+    const updated = user ? { ...user, ...patch } : null;
+    if (updated) {
+      setUser(updated);
+      await SecureStore.setItemAsync(USER_KEY, JSON.stringify(updated));
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, sendOtp, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, sendOtp, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

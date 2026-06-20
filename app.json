@@ -4,11 +4,11 @@
     "slug": "ronohub-lr",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/app-icon.png",
     "scheme": "ronohub",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/app-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#5B21B6"
     },
@@ -22,7 +22,7 @@
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#5B21B6",
-        "foregroundImage": "./assets/images/android-icon-foreground.png"
+        "foregroundImage": "./assets/images/app-icon.png"
       },
       "package": "com.ronohub.lr"
     },
@@ -31,6 +31,12 @@
       "expo-secure-store",
       "@react-native-community/datetimepicker",
       [
+        "expo-system-ui",
+        {
+          "backgroundColor": "#5B21B6"
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
@@ -38,7 +44,8 @@
             "networkSecurityConfig": "./network-security-config.xml"
           }
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "experiments": {
       "typedRoutes": true

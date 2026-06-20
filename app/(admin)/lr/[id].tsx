@@ -17,9 +17,12 @@ import { Ionicons } from "@expo/vector-icons";
 import { api, API_URL } from "@/lib/api";
 import type { LRRequest } from "@/lib/types";
 import { StatusBadge, formatINR } from "@/components/StatusBadge";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 export default function AdminLRDetail() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+
   const { id } = useLocalSearchParams<{ id: string }>();
   const [lr, setLr] = useState<LRRequest | null>(null);
   const [loading, setLoading] = useState(true);
@@ -78,6 +81,51 @@ export default function AdminLRDetail() {
     } else {
       Alert.alert("Error", res.error ?? "Failed to reject");
     }
+  }
+
+  function SectionCard({
+    icon,
+    title,
+    children,
+  }: {
+    icon: keyof typeof Ionicons.glyphMap;
+    title: string;
+    children: React.ReactNode;
+  }) {
+    return (
+      <View style={styles.sectionCard}>
+        <View style={styles.sectionHeader}>
+          <Ionicons name={icon} size={16} color={colors.primaryLight} />
+          <Text style={styles.sectionTitle}>{title}</Text>
+        </View>
+        {children}
+      </View>
+    );
+  }
+
+  function FieldRow({
+    label,
+    value,
+    valueStyle,
+    badge,
+  }: {
+    label: string;
+    value: string;
+    valueStyle?: object;
+    badge?: boolean;
+  }) {
+    return (
+      <View style={styles.fieldRow}>
+        <Text style={styles.fieldLabel}>{label}</Text>
+        {badge ? (
+          <View style={styles.badgeWrap}>
+            <Text style={styles.badgeText}>{value}</Text>
+          </View>
+        ) : (
+          <Text style={[styles.fieldValue, valueStyle]}>{value}</Text>
+        )}
+      </View>
+    );
   }
 
   if (loading) {
@@ -317,276 +365,233 @@ function absUrl(url: string): string {
   return `${API_URL}${url}`;
 }
 
-function SectionCard({
-  icon,
-  title,
-  children,
-}: {
-  icon: keyof typeof Ionicons.glyphMap;
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <View style={styles.sectionCard}>
-      <View style={styles.sectionHeader}>
-        <Ionicons name={icon} size={16} color={colors.primaryLight} />
-        <Text style={styles.sectionTitle}>{title}</Text>
-      </View>
-      {children}
-    </View>
-  );
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    scrollView: { flex: 1 },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: colors.background,
+    },
+    topBar: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingTop: 56,
+      paddingHorizontal: 16,
+      paddingBottom: 14,
+      backgroundColor: colors.card,
+      gap: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    backBtn: {
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: colors.background,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    topTitle: { fontSize: 18, fontWeight: "700", color: colors.text },
+    topSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
+    infoCard: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginHorizontal: 16,
+      marginTop: 12,
+      padding: 16,
+      borderRadius: 14,
+      backgroundColor: "#2D1B69",
+    },
+    infoLabel: {
+      fontSize: 10,
+      fontWeight: "700",
+      color: "#C4B5FD",
+      letterSpacing: 0.5,
+    },
+    infoValue: {
+      fontSize: 16,
+      fontWeight: "700",
+      color: "#fff",
+      marginTop: 4,
+    },
+    rejectionCard: {
+      flexDirection: "row",
+      gap: 12,
+      margin: 16,
+      marginBottom: 0,
+      padding: 14,
+      borderRadius: 14,
+      backgroundColor: "#FEF2F2",
+      borderWidth: 1,
+      borderColor: "#FECACA",
+    },
+    rejectionTitle: { color: colors.error, fontWeight: "700" },
+    rejectionMessage: { color: "#991B1B", fontSize: 13, marginTop: 2 },
+    sectionCard: {
+      backgroundColor: colors.card,
+      marginHorizontal: 16,
+      marginTop: 12,
+      borderRadius: 14,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginBottom: 12,
+      paddingBottom: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primaryLight,
+      letterSpacing: 0.6,
+      textTransform: "uppercase",
+    },
+    fieldRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    fieldLabel: {
+      fontSize: 12,
+      color: colors.textMuted,
+      flex: 1,
+    },
+    fieldValue: {
+      fontSize: 14,
+      color: colors.text,
+      fontWeight: "500",
+      flex: 1.5,
+      textAlign: "right",
+    },
+    badgeWrap: {
+      backgroundColor: "#EDE9FE",
+      paddingHorizontal: 10,
+      paddingVertical: 3,
+      borderRadius: 6,
+    },
+    badgeText: {
+      fontSize: 11,
+      fontWeight: "700",
+      color: colors.primaryLight,
+      textTransform: "uppercase",
+    },
+    photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
+    photoThumbWrap: {
+      width: 80,
+      height: 80,
+      borderRadius: 12,
+      overflow: "hidden",
+      backgroundColor: colors.iconBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    photoThumb: { width: "100%", height: "100%", borderRadius: 12 },
+    photoOverlay: {
+      position: "absolute",
+      width: "100%",
+      height: "100%",
+      alignItems: "center",
+      justifyContent: "center",
+      backgroundColor: "rgba(243,240,255,0.8)",
+    },
+    signatureImg: {
+      width: "100%",
+      height: 80,
+      marginTop: 12,
+      backgroundColor: colors.card,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    signatureMeta: {
+      fontSize: 11,
+      color: colors.textMuted,
+      marginTop: 8,
+      textAlign: "center",
+    },
+    bottomBar: {
+      flexDirection: "row",
+      gap: 12,
+      padding: 16,
+      backgroundColor: colors.card,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    rejectBtn: {
+      flex: 1,
+      backgroundColor: "#F472B6",
+      borderRadius: 28,
+      paddingVertical: 16,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 6,
+    },
+    approveBtn: {
+      flex: 1,
+      backgroundColor: colors.success,
+      borderRadius: 28,
+      paddingVertical: 16,
+      flexDirection: "row",
+      justifyContent: "center",
+      alignItems: "center",
+      gap: 6,
+    },
+    bottomBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
+    modalBackdrop: {
+      flex: 1,
+      backgroundColor: "rgba(0,0,0,0.5)",
+      justifyContent: "flex-end",
+    },
+    modalCard: {
+      backgroundColor: colors.card,
+      borderTopLeftRadius: 24,
+      borderTopRightRadius: 24,
+      padding: 24,
+      paddingBottom: 36,
+    },
+    modalTitle: { fontSize: 20, fontWeight: "700", color: colors.error },
+    modalSub: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
+    modalInput: {
+      marginTop: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 12,
+      padding: 14,
+      minHeight: 100,
+      textAlignVertical: "top",
+      fontSize: 15,
+      color: colors.text,
+      backgroundColor: colors.inputBg,
+    },
+    modalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
+    modalCancel: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      backgroundColor: colors.background,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modalSubmit: {
+      flex: 1,
+      paddingVertical: 14,
+      borderRadius: 12,
+      backgroundColor: colors.error,
+      alignItems: "center",
+    },
+  });
 }
-
-function FieldRow({
-  label,
-  value,
-  valueStyle,
-  badge,
-}: {
-  label: string;
-  value: string;
-  valueStyle?: object;
-  badge?: boolean;
-}) {
-  return (
-    <View style={styles.fieldRow}>
-      <Text style={styles.fieldLabel}>{label}</Text>
-      {badge ? (
-        <View style={styles.badgeWrap}>
-          <Text style={styles.badgeText}>{value}</Text>
-        </View>
-      ) : (
-        <Text style={[styles.fieldValue, valueStyle]}>{value}</Text>
-      )}
-    </View>
-  );
-}
-
-const styles = StyleSheet.create({
-  scrollView: { flex: 1 },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: colors.background,
-  },
-  topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingTop: 56,
-    paddingHorizontal: 16,
-    paddingBottom: 14,
-    backgroundColor: colors.white,
-    gap: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  backBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  topTitle: { fontSize: 18, fontWeight: "700", color: colors.text },
-  topSubtitle: { fontSize: 12, color: colors.textMuted, marginTop: 1 },
-  infoCard: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginHorizontal: 16,
-    marginTop: 12,
-    padding: 16,
-    borderRadius: 14,
-    backgroundColor: "#2D1B69",
-  },
-  infoLabel: {
-    fontSize: 10,
-    fontWeight: "700",
-    color: "#C4B5FD",
-    letterSpacing: 0.5,
-  },
-  infoValue: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#fff",
-    marginTop: 4,
-  },
-  rejectionCard: {
-    flexDirection: "row",
-    gap: 12,
-    margin: 16,
-    marginBottom: 0,
-    padding: 14,
-    borderRadius: 14,
-    backgroundColor: "#FEF2F2",
-    borderWidth: 1,
-    borderColor: "#FECACA",
-  },
-  rejectionTitle: { color: colors.error, fontWeight: "700" },
-  rejectionMessage: { color: "#991B1B", fontSize: 13, marginTop: 2 },
-  sectionCard: {
-    backgroundColor: colors.white,
-    marginHorizontal: 16,
-    marginTop: 12,
-    borderRadius: 14,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-    paddingBottom: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  sectionTitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primaryLight,
-    letterSpacing: 0.6,
-    textTransform: "uppercase",
-  },
-  fieldRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: "#F8FAFC",
-  },
-  fieldLabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    flex: 1,
-  },
-  fieldValue: {
-    fontSize: 14,
-    color: colors.text,
-    fontWeight: "500",
-    flex: 1.5,
-    textAlign: "right",
-  },
-  badgeWrap: {
-    backgroundColor: "#EDE9FE",
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 6,
-  },
-  badgeText: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: colors.primaryLight,
-    textTransform: "uppercase",
-  },
-  photoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 12 },
-  photoThumbWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
-    overflow: "hidden",
-    backgroundColor: "#F3F0FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  photoThumb: { width: "100%", height: "100%", borderRadius: 12 },
-  photoOverlay: {
-    position: "absolute",
-    width: "100%",
-    height: "100%",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "rgba(243,240,255,0.8)",
-  },
-  signatureImg: {
-    width: "100%",
-    height: 80,
-    marginTop: 12,
-    backgroundColor: "#fff",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  signatureMeta: {
-    fontSize: 11,
-    color: colors.textMuted,
-    marginTop: 8,
-    textAlign: "center",
-  },
-  bottomBar: {
-    flexDirection: "row",
-    gap: 12,
-    padding: 16,
-    backgroundColor: colors.white,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  rejectBtn: {
-    flex: 1,
-    backgroundColor: "#F472B6",
-    borderRadius: 28,
-    paddingVertical: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-  },
-  approveBtn: {
-    flex: 1,
-    backgroundColor: colors.success,
-    borderRadius: 28,
-    paddingVertical: 16,
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 6,
-  },
-  bottomBtnText: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "flex-end",
-  },
-  modalCard: {
-    backgroundColor: colors.white,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    padding: 24,
-    paddingBottom: 36,
-  },
-  modalTitle: { fontSize: 20, fontWeight: "700", color: colors.error },
-  modalSub: { color: colors.textMuted, marginTop: 4, fontSize: 13 },
-  modalInput: {
-    marginTop: 16,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: 12,
-    padding: 14,
-    minHeight: 100,
-    textAlignVertical: "top",
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: "#FAFAFA",
-  },
-  modalActions: { flexDirection: "row", gap: 10, marginTop: 16 },
-  modalCancel: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  modalSubmit: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: 12,
-    backgroundColor: colors.error,
-    alignItems: "center",
-  },
-});

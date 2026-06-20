@@ -1,18 +1,20 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
-import { colors } from "@/constants/theme";
+import { useThemeColors } from "@/constants/theme";
 
 export default function AdminLayout() {
+  const colors = useThemeColors();
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primaryLight,
-        tabBarInactiveTintColor: "#94A3B8",
+        tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
-          backgroundColor: "#FFFFFF",
+          backgroundColor: colors.tabBar,
           borderTopWidth: 1,
-          borderTopColor: "#F1F5F9",
+          borderTopColor: colors.tabBarBorder,
           paddingTop: 6,
           paddingBottom: 6,
           height: 60,

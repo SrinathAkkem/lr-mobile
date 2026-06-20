@@ -16,7 +16,7 @@ import { useAuth } from "@/lib/auth";
 import { api } from "@/lib/api";
 import type { LRRequest, LRStatus } from "@/lib/types";
 import { StatusBadge } from "@/components/StatusBadge";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 const FILTERS: ("all" | LRStatus)[] = [
   "all",
@@ -27,6 +27,9 @@ const FILTERS: ("all" | LRStatus)[] = [
 ];
 
 export default function AdminLRList() {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
+
   const { user } = useAuth();
   const [lrs, setLrs] = useState<LRRequest[]>([]);
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("all");
@@ -149,11 +152,9 @@ export default function AdminLRList() {
       <FlatList
         data={filtered}
         keyExtractor={(i) => i.id}
-        style={styles.listContainer}
         contentContainerStyle={
           filtered.length === 0
-            ? styles.emptyWrap
-            : [styles.listContent, { paddingHorizontal: 16, paddingTop: 8, paddingBottom: 16 }]
+            ? styles.emptyContainer : { paddingHorizontal: 16, paddingTop: 0, paddingBottom: 30 }
         }
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={load} />
@@ -217,120 +218,117 @@ export default function AdminLRList() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  loadingContainer: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 12,
-  },
-  loadingText: { color: colors.textMuted, fontSize: 14 },
-  header: {
-    backgroundColor: colors.primary,
-    paddingTop: 56,
-    paddingBottom: 18,
-    paddingHorizontal: 20,
-  },
-  headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  title: { color: "#fff", fontSize: 22, fontWeight: "700" },
-  subtitle: { color: "#C4B5FD", fontSize: 12, marginTop: 4 },
-  searchBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.15)",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  searchWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: colors.white,
-    borderRadius: 12,
-    margin: 12,
-    marginBottom: 6,
-    paddingHorizontal: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  searchInput: { flex: 1, paddingVertical: 12, paddingLeft: 8, fontSize: 14, color: colors.text },
-  filters: {
-    flexDirection: "row",
-    gap: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  filter: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 14,
-    backgroundColor: colors.white,
-    borderWidth: 1,
-    borderColor: colors.border,
-    height: 28,
-    justifyContent: "center",
-  },
-  filterActive: {
-    backgroundColor: colors.primaryLight,
-    borderColor: colors.primaryLight,
-  },
-  filterText: {
-    fontSize: 11,
-    fontWeight: "600",
-    color: colors.text,
-  },
-  filterTextActive: {
-    color: "#fff",
-  },
-  listContainer: {
-    flex: 1,
-  },
-  listContent: {
-    flexGrow: 1,
-  },
-  card: {
-    backgroundColor: colors.white,
-    borderRadius: 14,
-    padding: 14,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  cardTop: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 10,
-  },
-  cardIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    backgroundColor: "#F3F0FF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  lrId: { fontWeight: "700", fontSize: 14, color: colors.text },
-  driverLine: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
-  cardBottom: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 10,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#F1F5F9",
-  },
-  routeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  routeText: { color: colors.text, fontSize: 13, fontWeight: "500" },
-  dateText: { color: colors.textMuted, fontSize: 12 },
-  emptyWrap: { flex: 1, alignItems: "center", justifyContent: "center" },
-  empty: { padding: 30, alignItems: "center", gap: 10 },
-  emptyTitle: { fontSize: 16, fontWeight: "700" },
-  emptyHint: { color: colors.textMuted, fontSize: 13, textAlign: "center" },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    container: { flex: 1, backgroundColor: colors.background },
+    loadingContainer: {
+      flex: 1,
+      backgroundColor: colors.background,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 12,
+    },
+    loadingText: { color: colors.textMuted, fontSize: 14 },
+    header: {
+      backgroundColor: colors.primary,
+      paddingTop: 56,
+      paddingBottom: 18,
+      paddingHorizontal: 20,
+    },
+    headerRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+    },
+    title: { color: "#fff", fontSize: 22, fontWeight: "700" },
+    subtitle: { color: colors.headerSubtitle, fontSize: 12, marginTop: 4 },
+    searchBtn: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: "rgba(255,255,255,0.15)",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    searchWrap: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.card,
+      borderRadius: 12,
+      margin: 12,
+      marginBottom: 6,
+      paddingHorizontal: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    searchInput: { flex: 1, paddingVertical: 12, paddingLeft: 8, fontSize: 14, color: colors.text },
+    filters: {
+      flexDirection: "row",
+      gap: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      paddingBottom: 4,
+    },
+    filter: {
+      paddingHorizontal: 12,
+      paddingVertical: 4,
+      borderRadius: 14,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      height: 28,
+      justifyContent: "center",
+    },
+    filterActive: {
+      backgroundColor: colors.primaryLight,
+      borderColor: colors.primaryLight,
+    },
+    filterText: {
+      fontSize: 11,
+      fontWeight: "600",
+      color: colors.text,
+    },
+    filterTextActive: {
+      color: "#fff",
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardTop: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      gap: 10,
+    },
+    cardIconWrap: {
+      width: 36,
+      height: 36,
+      borderRadius: 10,
+      backgroundColor: colors.iconBg,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    lrId: { fontWeight: "700", fontSize: 14, color: colors.text },
+    driverLine: { color: colors.textMuted, fontSize: 12, marginTop: 2 },
+    cardBottom: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 10,
+      paddingTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+    },
+    routeRow: { flexDirection: "row", alignItems: "center", gap: 4 },
+    routeText: { color: colors.text, fontSize: 13, fontWeight: "500" },
+    dateText: { color: colors.textMuted, fontSize: 12 },
+    empty: { padding: 30, alignItems: "center", gap: 10 },
+    emptyContainer: { flex: 1, alignItems: "center", justifyContent: "center" },
+    emptyTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
+    emptyHint: { color: colors.textMuted, fontSize: 13, textAlign: "center" },
+  });
+}

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { TextInput, View, StyleSheet, NativeSyntheticEvent, TextInputKeyPressEventData } from "react-native";
-import { colors } from "@/constants/theme";
+import { useThemeColors, type ThemeColors } from "@/constants/theme";
 
 interface Props {
   value: string;
@@ -10,6 +10,8 @@ interface Props {
 }
 
 export function OtpBoxes({ value, onChange, length = 6, autoFocus = true }: Props) {
+  const colors = useThemeColors();
+  const styles = createStyles(colors);
   const refs = useRef<(TextInput | null)[]>([]);
 
   useEffect(() => {
@@ -57,7 +59,7 @@ export function OtpBoxes({ value, onChange, length = 6, autoFocus = true }: Prop
               maxLength={1}
               textContentType="oneTimeCode"
               placeholder="—"
-              placeholderTextColor="#CBD5E1"
+              placeholderTextColor={colors.textMuted}
             />
           </View>
         );
@@ -66,31 +68,33 @@ export function OtpBoxes({ value, onChange, length = 6, autoFocus = true }: Prop
   );
 }
 
-const styles = StyleSheet.create({
-  row: { flexDirection: "row", gap: 10, justifyContent: "center" },
-  boxWrap: {
-    width: 50,
-    height: 58,
-    borderRadius: 14,
-    borderWidth: 2,
-    borderColor: colors.border,
-    backgroundColor: colors.white,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  boxWrapFilled: {
-    borderColor: colors.primaryLight,
-    backgroundColor: "#FAFAFE",
-  },
-  box: {
-    width: "100%",
-    height: "100%",
-    textAlign: "center",
-    fontSize: 24,
-    fontWeight: "700",
-    color: colors.text,
-  },
-  boxTextFilled: {
-    color: colors.primary,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    row: { flexDirection: "row", gap: 10, justifyContent: "center" },
+    boxWrap: {
+      width: 50,
+      height: 58,
+      borderRadius: 14,
+      borderWidth: 2,
+      borderColor: colors.border,
+      backgroundColor: colors.card,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    boxWrapFilled: {
+      borderColor: colors.primaryLight,
+      backgroundColor: colors.iconBg,
+    },
+    box: {
+      width: "100%",
+      height: "100%",
+      textAlign: "center",
+      fontSize: 24,
+      fontWeight: "700",
+      color: colors.text,
+    },
+    boxTextFilled: {
+      color: colors.primary,
+    },
+  });
+}
