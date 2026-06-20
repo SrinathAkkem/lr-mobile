@@ -1,42 +1,54 @@
 {
   "expo": {
-    "name": "lr-mobile",
-    "slug": "lr-mobile",
+    "name": "RonoHub LR",
+    "slug": "ronohub-lr",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "lrmobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "ronohub",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/images/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#5B21B6"
+    },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": false,
+      "bundleIdentifier": "com.ronohub.lr",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#5B21B6",
+        "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "package": "com.ronohub.lr"
     },
     "plugins": [
       "expo-router",
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
       [
-        "expo-splash-screen",
+        "expo-build-properties",
         {
-          "image": "./assets/images/splash-icon.png",
-          "resizeMode": "contain",
-          "backgroundColor": "#ffffff"
+          "android": {
+            "usesCleartextTraffic": false,
+            "networkSecurityConfig": "./network-security-config.xml"
+          }
         }
       ]
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "bb58626c-71f0-43b8-881e-5174642a4df5"
+      },
+      "router": {}
+    },
+    "owner": "srinathakkem"
   }
 }
